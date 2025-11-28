@@ -1,0 +1,37 @@
+name: Generate text every 30 min
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # каждые 30 минут
+  workflow_dispatch:          # запуск вручную при необходимости
+
+jobs:
+  generate_text:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run generator
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python generate_2pages.py
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add two_pages_*.txt || true
+          git commit -m "Generated text $(date -u +%Y%m%dT%H%M%SZ)" || true
+
+      - name: Push changes
+        run: git push
